@@ -40,14 +40,6 @@ L'utilisateur colle un extrait de cours, choisit le nombre et le type de questio
 
 \---
 
-## 🚀 Utilisation
-
-Ouvrir directement : [**Démo live**](https://VOTRE_USERNAME.github.io/quizgen-ai)
-
-Ou cloner et ouvrir `index.html` dans le navigateur.
-
-\---
-
 ## 🏗️ Architecture
 
 ```
