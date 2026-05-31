@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QuizGen AI — Générateur de Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Instrument+Sans:wght@400;500;600&family=Instrument+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#0e0f13;--surface:#16181f;--surface2:#1e2028;--border:#2a2d38;
+  --text:#e8eaf2;--muted:#6b6f82;--accent:#f0c274;--accent2:#74b8f0;
+  --green:#74f0a8;--red:#f07474;--radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;opacity:.6;}
+.blob1,.blob2{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0;}
+.blob1{width:500px;height:500px;background:rgba(240,194,116,.06);top:-100px;right:-100px;}
+.blob2{width:400px;height:400px;background:rgba(116,184,240,.05);bottom:-50px;left:-50px;}
+header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--border);background:rgba(14,15,19,.8);backdrop-filter:blur(12px);}
+.logo{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:900;display:flex;align-items:center;gap:10px;}
+.logo-mark{width:30px;height:30px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#0e0f13;font-size:.9rem;font-weight:900;}
+.logo em{color:var(--accent);font-style:italic;}
+.header-pills{display:flex;gap:8px;}
+.hpill{font-family:'Instrument Mono',monospace;font-size:.65rem;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--muted);}
+.hpill.active{border-color:rgba(240,194,116,.4);color:var(--accent);background:rgba(240,194,116,.08);}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:32px 24px;display:flex;flex-direction:column;gap:24px;}
+.steps{display:flex;align-items:center;gap:0;margin-bottom:8px;}
+.step{display:flex;align-items:center;gap:8px;font-size:.75rem;font-weight:600;color:var(--muted);padding:8px 16px;transition:color .3s;}
+.step.active{color:var(--accent);}
+.step.done{color:var(--green);}
+.step-num{width:22px;height:22px;border-radius:50%;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-family:'Instrument Mono',monospace;font-size:.65rem;flex-shrink:0;}
+.step-sep{flex:1;height:1px;background:var(--border);max-width:40px;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.panel-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.ph-num{font-family:'Instrument Mono',monospace;font-size:.62rem;color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:2px 8px;border-radius:4px;}
+.ph-title{font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;}
+.ph-badge{margin-left:auto;font-family:'Instrument Mono',monospace;font-size:.62rem;padding:3px 9px;border-radius:20px;border:1px solid rgba(240,194,116,.3);color:var(--accent);background:rgba(240,194,116,.08);}
+.input-body{padding:20px;}
+.field-label{display:block;font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px;}
+.field-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:.86rem;outline:none;margin-bottom:16px;transition:border-color .2s;}
+.field-input:focus{border-color:rgba(240,194,116,.5);}
+textarea.doc-input{width:100%;min-height:180px;resize:vertical;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:.86rem;line-height:1.6;outline:none;transition:border-color .2s;}
+textarea.doc-input:focus{border-color:rgba(240,194,116,.5);}
+textarea.doc-input::placeholder{color:var(--muted);}
+.char-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+.char-info{font-family:'Instrument Mono',monospace;font-size:.65rem;color:var(--muted);}
+.options-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;}
+.opt-group{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px;}
+select.opt-select{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:.82rem;outline:none;cursor:pointer;appearance:none;transition:border-color .2s;}
+select.opt-select:focus{border-color:rgba(240,194,116,.5);}
+.num-ctrl{display:flex;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;width:fit-content;}
+.nc-btn{width:36px;height:38px;background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;transition:background .2s,color .2s;}
+.nc-btn:hover{background:var(--surface2);color:var(--accent);}
+.nc-val{font-family:'Instrument Mono',monospace;font-size:.88rem;min-width:32px;text-align:center;padding:0 4px;}
+.gen-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 24px;margin-top:20px;background:var(--accent);color:#0e0f13;border:none;border-radius:10px;cursor:pointer;font-family:'Instrument Sans',sans-serif;font-size:.9rem;font-weight:600;transition:all .2s;letter-spacing:.2px;}
+.gen-btn:hover{background:#f5d08a;transform:translateY(-1px);box-shadow:0 8px 30px rgba(240,194,116,.25);}
+.gen-btn:active{transform:none;}
+.gen-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.loading-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;gap:16px;}
+.loader{width:44px;height:44px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent);animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loader-txt{font-family:'Fraunces',serif;font-size:1rem;color:var(--muted);}
+.loader-sub{font-family:'Instrument Mono',monospace;font-size:.7rem;color:var(--muted);}
+.quiz-top{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.quiz-title{font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;flex:1;}
+.score-badge{font-family:'Instrument Mono',monospace;font-size:.72rem;padding:4px 12px;border-radius:20px;background:rgba(116,240,168,.1);border:1px solid rgba(116,240,168,.3);color:var(--green);}
+.reset-btn{font-size:.72rem;padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-family:'Instrument Sans',sans-serif;transition:all .2s;}
+.reset-btn:hover{border-color:var(--accent);color:var(--accent);}
+.questions-list{padding:20px;display:flex;flex-direction:column;gap:14px;}
+.q-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;animation:fadeUp .3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.q-top{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;}
+.q-num{font-family:'Instrument Mono',monospace;font-size:.65rem;background:var(--surface);border:1px solid var(--border);padding:2px 8px;border-radius:4px;color:var(--muted);flex-shrink:0;margin-top:2px;}
+.q-type{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:20px;flex-shrink:0;margin-top:2px;}
+.type-qcm{background:rgba(116,184,240,.12);color:var(--accent2);border:1px solid rgba(116,184,240,.25);}
+.type-tf{background:rgba(240,194,116,.12);color:var(--accent);border:1px solid rgba(240,194,116,.25);}
+.type-open{background:rgba(116,240,168,.1);color:var(--green);border:1px solid rgba(116,240,168,.2);}
+.q-text{font-size:.88rem;font-weight:500;line-height:1.5;flex:1;}
+.q-body{padding:0 16px 14px;}
+.opts{list-style:none;display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.opt{padding:10px 14px;border-radius:8px;border:1px solid var(--border);font-size:.82rem;cursor:pointer;transition:all .18s;line-height:1.4;}
+.opt:hover{border-color:var(--accent2);background:rgba(116,184,240,.05);}
+.opt.correct{border-color:var(--green);background:rgba(116,240,168,.08);color:var(--green);font-weight:600;cursor:default;}
+.opt.wrong{border-color:var(--red);background:rgba(240,116,116,.08);color:var(--red);cursor:default;}
+.opt.disabled{cursor:default;}
+.tf-row{display:flex;gap:8px;margin-top:10px;}
+.tf-btn{padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;}
+.tf-btn:hover{border-color:var(--accent);background:rgba(240,194,116,.08);}
+.tf-btn.correct{border-color:var(--green);background:rgba(116,240,168,.1);color:var(--green);}
+.tf-btn.wrong{border-color:var(--red);background:rgba(240,116,116,.1);color:var(--red);}
+.show-expl-btn{margin-top:10px;font-size:.72rem;font-weight:500;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:all .2s;}
+.show-expl-btn:hover{background:var(--surface);color:var(--text);}
+.expl-box{margin-top:10px;padding:12px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:8px;font-size:.8rem;line-height:1.65;color:var(--muted);display:none;}
+.expl-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--green);margin-bottom:5px;}
+.open-input{width:100%;margin-top:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:.82rem;resize:vertical;min-height:70px;outline:none;line-height:1.5;transition:border-color .2s;}
+.open-input:focus{border-color:rgba(240,194,116,.4);}
+.results-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;gap:16px;text-align:center;}
+.result-score{font-family:'Fraunces',serif;font-size:3.5rem;font-weight:900;color:var(--accent);line-height:1;}
+.result-label{font-size:.85rem;color:var(--muted);}
+.result-msg{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;margin-top:4px;}
+.result-bar{width:200px;height:8px;background:var(--border);border-radius:8px;overflow:hidden;}
+.result-fill{height:100%;background:var(--accent);border-radius:8px;transition:width 1s ease;}
+.new-quiz-btn{margin-top:8px;padding:12px 28px;border-radius:10px;background:var(--accent);color:#0e0f13;border:none;font-family:'Instrument Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.new-quiz-btn:hover{background:#f5d08a;transform:translateY(-1px);}
+.about-strip{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.about-text{flex:1;}
+.about-title{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;margin-bottom:4px;}
+.about-desc{font-size:.78rem;color:var(--muted);line-height:1.6;}
+.about-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.tag{font-family:'Instrument Mono',monospace;font-size:.62rem;padding:3px 10px;border-radius:20px;border:1px solid var(--border);color:var(--muted);}
+.author-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 18px;text-align:center;flex-shrink:0;}
+.author-av{width:42px;height:42px;border-radius:10px;background:var(--accent);color:#0e0f13;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.1rem;font-weight:900;margin:0 auto 8px;}
+.author-name{font-size:.82rem;font-weight:600;}
+.author-sub{font-size:.68rem;color:var(--muted);margin-top:2px;font-family:'Instrument Mono',monospace;}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
+.foot-logo{font-family:'Fraunces',serif;font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:6px;}
+.foot-mark{width:18px;height:18px;border-radius:4px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#0e0f13;font-size:.55rem;font-weight:900;}
+.foot-info{font-family:'Instrument Mono',monospace;font-size:.65rem;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="blob1"></div>
+<div class="blob2"></div>
+
+<header>
+  <div class="logo"><div class="logo-mark">Q</div>Quiz<em>Gen</em> AI</div>
+  <div class="header-pills">
+    <span class="hpill active">LLM · Claude</span>
+    <span class="hpill">ENSTAB 2026</span>
+  </div>
+</header>
+
+<div class="app">
+
+  <div class="steps">
+    <div class="step active" id="step1"><span class="step-num">1</span> Coller le cours</div>
+    <div class="step-sep"></div>
+    <div class="step" id="step2"><span class="step-num">2</span> Générer</div>
+    <div class="step-sep"></div>
+    <div class="step" id="step3"><span class="step-num">3</span> Répondre</div>
+    <div class="step-sep"></div>
+    <div class="step" id="step4"><span class="step-num">4</span> Résultats</div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="panel" id="input-panel">
+    <div class="panel-head">
+      <span class="ph-num">01</span>
+      <span class="ph-title">Contenu du document</span>
+      <span class="ph-badge">Claude LLM</span>
+    </div>
+    <div class="input-body">
+      <label class="field-label">Sujet / Matière</label>
+      <input type="text" class="field-input" id="subject" placeholder="ex: Réseaux de neurones, Thermodynamique…"/>
+
+      <label class="field-label">Texte du cours <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">(collez ici)</span></label>
+      <textarea class="doc-input" id="doc-text" oninput="updateChar()" placeholder="Collez le contenu de votre cours ou chapitre ici…&#10;&#10;Plus le texte est riche, plus les questions seront pertinentes."></textarea>
+      <div class="char-row">
+        <span class="char-info" id="char-info">0 caractères</span>
+        <span class="char-info">max 2500 recommandé</span>
+      </div>
+
+      <div class="options-row">
+        <div class="opt-group">
+          <label class="field-label">Nb. questions</label>
+          <div class="num-ctrl">
+            <button class="nc-btn" onclick="changeN(-1)">−</button>
+            <span class="nc-val" id="n-val">5</span>
+            <button class="nc-btn" onclick="changeN(1)">+</button>
+          </div>
+        </div>
+        <div class="opt-group">
+          <label class="field-label">Niveau</label>
+          <select class="opt-select" id="level">
+            <option>Licence</option>
+            <option selected>Master</option>
+            <option>Doctorat</option>
+            <option>Lycée</option>
+          </select>
+        </div>
+        <div class="opt-group">
+          <label class="field-label">Langue</label>
+          <select class="opt-select" id="lang">
+            <option value="français" selected>Français</option>
+            <option value="anglais">Anglais</option>
+          </select>
+        </div>
+        <div class="opt-group">
+          <label class="field-label">Difficulté</label>
+          <select class="opt-select" id="diff">
+            <option>Facile</option>
+            <option selected>Moyen</option>
+            <option>Difficile</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="gen-btn" id="gen-btn" onclick="generateQuiz()">
+        <span>✦</span> Générer le quiz avec l'IA <span>→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="panel" id="loading-panel" style="display:none">
+    <div class="loading-panel">
+      <div class="loader"></div>
+      <p class="loader-txt">L'IA génère votre quiz…</p>
+      <p class="loader-sub" id="loader-sub">Analyse du contenu…</p>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="panel" id="quiz-panel" style="display:none">
+    <div class="quiz-top">
+      <span class="quiz-title" id="quiz-title">Quiz</span>
+      <span class="score-badge" id="score-badge">0 / 0</span>
+      <button class="reset-btn" onclick="resetQuiz()">↺ Nouveau</button>
+    </div>
+    <div class="questions-list" id="questions-list"></div>
+    <div style="padding:16px 20px;border-top:1px solid var(--border);">
+      <button class="gen-btn" style="margin-top:0" onclick="submitQuiz()">Voir mes résultats →</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="panel" id="results-panel" style="display:none">
+    <div class="results-inner">
+      <div class="result-score" id="res-score">0%</div>
+      <div class="result-bar"><div class="result-fill" id="res-fill" style="width:0%"></div></div>
+      <div class="result-label" id="res-label"></div>
+      <div class="result-msg" id="res-msg"></div>
+      <button class="new-quiz-btn" onclick="resetQuiz()">✦ Générer un nouveau quiz</button>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="about-strip">
+    <div class="about-text">
+      <div class="about-title">À propos — QuizGen AI</div>
+      <div class="about-desc">Système de génération automatique de quiz à partir de documents, utilisant un modèle génératif LLM (Claude, Anthropic). L'IA analyse le contenu fourni et génère des questions QCM, Vrai/Faux et ouvertes avec corrections automatiques.</div>
+      <div class="about-tags">
+        <span class="tag">HTML / CSS / JS</span>
+        <span class="tag">Claude API · LLM</span>
+        <span class="tag">Génératif</span>
+        <span class="tag">ENSTAB · 2026</span>
+      </div>
+    </div>
+    <div class="author-card">
+      <div class="author-av">A</div>
+      <div class="author-name">Arij Belhaj Hamada</div>
+      <div class="author-sub">ENSTAB · 2ème année · 2026</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="foot-logo"><div class="foot-mark">Q</div> QuizGen AI</div>
+  <div class="foot-info">Arij Belhaj Hamada · ENSTAB · Université de Carthage · 2026</div>
+</footer>
+
+<script>
+let nQ = 5, questions = [], answered = {}, score = 0;
+const loaderMsgs = ['Analyse du contenu…','Formulation des questions…','Génération des corrections…','Vérification…','Finalisation…'];
+let loaderTimer;
+
+function updateChar() {
+  document.getElementById('char-info').textContent = document.getElementById('doc-text').value.length + ' caractères';
+}
+function changeN(d) {
+  nQ = Math.min(10, Math.max(1, nQ + d));
+  document.getElementById('n-val').textContent = nQ;
+}
+function setStep(n) {
+  ['step1','step2','step3','step4'].forEach((id,i) => {
+    document.getElementById(id).className = 'step' + (i+1<n?' done':i+1===n?' active':'');
+  });
+}
+
+async function generateQuiz() {
+  const subject = document.getElementById('subject').value.trim();
+  const text    = document.getElementById('doc-text').value.trim();
+  const level   = document.getElementById('level').value;
+  const lang    = document.getElementById('lang').value;
+  const diff    = document.getElementById('diff').value;
+
+  if (!text && !subject) { alert('Veuillez entrer un sujet ou coller un texte.'); return; }
+
+  document.getElementById('input-panel').style.display = 'none';
+  document.getElementById('loading-panel').style.display = 'block';
+  document.getElementById('quiz-panel').style.display = 'none';
+  document.getElementById('results-panel').style.display = 'none';
+  document.getElementById('gen-btn').disabled = true;
+  setStep(2);
+
+  let li = 0;
+  loaderTimer = setInterval(() => {
+    document.getElementById('loader-sub').textContent = loaderMsgs[li++ % loaderMsgs.length];
+  }, 1200);
+
+  const prompt = `Tu es un expert pédagogue. Génère exactement ${nQ} questions de quiz en ${lang} sur "${subject||'le cours fourni'}", niveau ${level}, difficulté ${diff}.
+${text?`\nCours:\n${text.slice(0,2500)}`:''}
+
+Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks:
+{"questions":[{"id":1,"type":"qcm","question":"?","options":["A) a","B) b","C) c","D) d"],"correct":"A) a","explanation":"Explication courte."},{"id":2,"type":"vrai_faux","question":"Affirmation.","correct":"Vrai","explanation":"Justification."},{"id":3,"type":"ouverte","question":"?","correct":null,"explanation":"Réponse modèle."}]}
+
+RÈGLES: exactement ${nQ} questions, explications max 2 phrases, JSON complet et valide.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:'You are a quiz generator. Respond ONLY with valid JSON, no markdown, no backticks.',
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.map(b=>b.text||'').join('')||'';
+    questions = parseQ(raw);
+    if (!questions?.length) throw new Error('Réponse invalide, réessayez.');
+    clearInterval(loaderTimer);
+    answered={}; score=0;
+    renderQuiz(subject, level);
+    setStep(3);
+  } catch(err) {
+    clearInterval(loaderTimer);
+    document.getElementById('loading-panel').style.display='none';
+    document.getElementById('input-panel').style.display='block';
+    document.getElementById('gen-btn').disabled=false;
+    alert('Erreur: '+err.message);
+    setStep(1);
+  }
+}
+
+function parseQ(raw) {
+  try {
+    let c = raw.replace(/```json|```/g,'').trim();
+    const s=c.indexOf('{'), e=c.lastIndexOf('}');
+    if(s===-1||e===-1) throw new Error();
+    return JSON.parse(c.slice(s,e+1)).questions||[];
+  } catch(e){ console.error(e,raw); return null; }
+}
+
+function renderQuiz(subject, level) {
+  document.getElementById('loading-panel').style.display='none';
+  document.getElementById('quiz-panel').style.display='block';
+  document.getElementById('quiz-title').textContent=(subject||'Quiz')+' · '+level;
+  updateBadge();
+  const list = document.getElementById('questions-list');
+  list.innerHTML='';
+  questions.forEach((q,i)=>{
+    const card=document.createElement('div');
+    card.className='q-card'; card.id='qcard-'+i;
+    card.style.animationDelay=(i*.07)+'s';
+    const ti = q.type==='qcm'?{cls:'type-qcm',lbl:'QCM'}:q.type==='vrai_faux'?{cls:'type-tf',lbl:'Vrai/Faux'}:{cls:'type-open',lbl:'Ouverte'};
+    let body='';
+    if(q.type==='qcm'&&q.options){
+      body=`<ul class="opts">${q.options.map(o=>`<li class="opt" onclick="answerQCM(${i},this,'${esc(q.correct)}')">${e2(o)}</li>`).join('')}</ul>`;
+    } else if(q.type==='vrai_faux'){
+      body=`<div class="tf-row"><button class="tf-btn" id="tfv${i}" onclick="answerTF(${i},'Vrai','${esc(q.correct)}')">✓ Vrai</button><button class="tf-btn" id="tff${i}" onclick="answerTF(${i},'Faux','${esc(q.correct)}')">✗ Faux</button></div>`;
+    } else {
+      body=`<textarea class="open-input" placeholder="Votre réponse…"></textarea>`;
+    }
+    if(q.explanation){
+      body+=`<button class="show-expl-btn" id="eb${i}" onclick="toggleExpl(${i})">Voir la correction →</button><div class="expl-box" id="ex${i}"><div class="expl-label">✓ Correction</div>${q.correct?'<strong>'+e2(q.correct)+'</strong><br/>':''}${e2(q.explanation)}</div>`;
+    }
+    card.innerHTML=`<div class="q-top"><span class="q-num">Q${q.id||i+1}</span><span class="q-type ${ti.cls}">${ti.lbl}</span><span class="q-text">${e2(q.question)}</span></div><div class="q-body">${body}</div>`;
+    list.appendChild(card);
+  });
+}
+
+function answerQCM(i,li,correct){
+  if(answered[i]!==undefined)return;
+  const opts=li.parentElement.querySelectorAll('.opt');
+  opts.forEach(o=>o.classList.add('disabled'));
+  const ok=li.textContent.trim()===correct;
+  li.classList.add(ok?'correct':'wrong');
+  opts.forEach(o=>{if(o.textContent.trim()===correct)o.classList.add('correct');});
+  answered[i]=ok; if(ok)score++;
+  updateBadge(); hlCard(i,ok);
+}
+function answerTF(i,val,correct){
+  if(answered[i]!==undefined)return;
+  const ok=val===correct;
+  const vb=document.getElementById('tfv'+i),fb=document.getElementById('tff'+i);
+  vb.onclick=null; fb.onclick=null;
+  (val==='Vrai'?vb:fb).classList.add(ok?'correct':'wrong');
+  if(!ok)(val==='Vrai'?fb:vb).classList.add('correct');
+  answered[i]=ok; if(ok)score++;
+  updateBadge(); hlCard(i,ok);
+}
+function hlCard(i,ok){
+  const c=document.getElementById('qcard-'+i);
+  if(c)c.style.borderColor=ok?'rgba(116,240,168,.35)':'rgba(240,116,116,.35)';
+}
+function toggleExpl(i){
+  const box=document.getElementById('ex'+i),btn=document.getElementById('eb'+i);
+  const open=box.style.display!=='none';
+  box.style.display=open?'none':'block';
+  btn.textContent=open?'Voir la correction →':'Masquer ↑';
+}
+function updateBadge(){
+  const total=questions.filter(q=>q.type!=='ouverte').length;
+  document.getElementById('score-badge').textContent=score+' / '+total;
+}
+function submitQuiz(){
+  const auto=questions.filter(q=>q.type!=='ouverte');
+  const pct=auto.length?Math.round(score/auto.length*100):100;
+  const msg=pct>=80?'🎉 Excellent travail !':pct>=60?'👍 Bon résultat !':pct>=40?'📚 Continuez vos révisions.':'💪 Révisez et réessayez !';
+  document.getElementById('quiz-panel').style.display='none';
+  document.getElementById('results-panel').style.display='block';
+  document.getElementById('res-score').textContent=pct+'%';
+  document.getElementById('res-label').textContent=score+' bonne(s) sur '+auto.length+' questions notées';
+  document.getElementById('res-msg').textContent=msg;
+  setTimeout(()=>{document.getElementById('res-fill').style.width=pct+'%';},100);
+  setStep(4);
+}
+function resetQuiz(){
+  questions=[];answered={};score=0;
+  document.getElementById('input-panel').style.display='block';
+  document.getElementById('quiz-panel').style.display='none';
+  document.getElementById('results-panel').style.display='none';
+  document.getElementById('loading-panel').style.display='none';
+  document.getElementById('gen-btn').disabled=false;
+  document.getElementById('doc-text').value='';
+  document.getElementById('subject').value='';
+  updateChar(); setStep(1);
+}
+function esc(s){return s?String(s).replace(/'/g,"&#39;").replace(/"/g,"&quot;"):'';}
+function e2(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):'';}
+</script>
+</body>
+</html>
